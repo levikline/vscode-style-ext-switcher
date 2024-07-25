@@ -17,6 +17,17 @@ when the current file is the only file that matches the base name. More details:
    base name. Instead, a message is displayed in the status bar indicating that
    no matching files were found.
 
+For my specific use case, I use the following keybinding:
+
+```json
+{
+  "key": "cmd+shift+c",
+  "command": "fileextswitch",
+  "args": { "extensions": [".module.scss", ".tsx"], "useOtherColumn": true },
+  "when": "editorTextFocus"
+}
+```
+
 ---
 
 Once **[set up](#setup)** _file-ext-switcher_ allows you to quickly switch via keyboard shortcuts between files which share same name but differ by extension (AKA companion files, e.g. from `file.html` to `file.js`).
