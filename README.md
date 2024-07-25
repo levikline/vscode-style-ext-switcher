@@ -17,6 +17,8 @@ when the current file is the only file that matches the base name. More details:
    base name. Instead, a message is displayed in the status bar indicating that
    no matching files were found.
 
+---
+
 Once **[set up](#setup)** _file-ext-switcher_ allows you to quickly switch via keyboard shortcuts between files which share same name but differ by extension (AKA companion files, e.g. from `file.html` to `file.js`).
 This is very useful for Angular (and even AngularJs) component development where you need to quickly switch between code, template, style and test files.
 
