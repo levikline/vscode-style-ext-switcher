@@ -1,8 +1,8 @@
-# vscode-styleswitch
+# vscode-style-ext-switcher
 
 ## Introduction
 
-`vscode-styleswitch` is a Visual Studio Code extension designed to streamline switching between companion JavaScript (or TypeScript) and CSS (or SCSS) files. This extension is particularly useful for developers working with React or other frameworks where related files frequently share the same base name but have different extensions.
+`vscode-style-ext-switcher` is a Visual Studio Code extension designed to streamline switching between companion JavaScript (or TypeScript) and CSS (or SCSS) files. This extension is particularly useful for developers working with React or other frameworks where related files frequently share the same base name but have different extensions.
 
 ## Features
 
@@ -13,7 +13,7 @@
 
 ## Example Directory Structure
 
-Consider a project structure where you have a `NavigationBar` component folder containing `index.tsx` and `NavigationBar.module.scss`. This is a typical scenario where `vscode-styleswitch` proves useful.
+Consider a project structure where you have a `NavigationBar` component folder containing `index.tsx` and `NavigationBar.module.scss`. This is a typical scenario where `vscode-style-ext-switcher` proves useful.
 
 ```plaintext
 my-project/
@@ -37,7 +37,7 @@ CSS/SCSS files to the corresponding `index.xxx` file.
 
 ## Keybinding Setup
 
-To use `vscode-styleswitch`, you need to set up custom keybindings. This allows you to quickly switch between related files with a single keystroke.
+To use `vscode-style-ext-switcher`, you need to set up custom keybindings. This allows you to quickly switch between related files with a single keystroke.
 
 ### Example Keybindings
 
@@ -70,7 +70,7 @@ These shortcuts open a companion file in another editor column, so you can quick
 
 ## Supported File Extensions
 
-The `vscode-styleswitch` extension supports the following file extensions:
+The `vscode-style-ext-switcher` extension supports the following file extensions:
 
 - JavaScript: `.js`, `.jsx`, `.ts`, `.tsx`
 - CSS: `.module.scss`, `.css`, `.scss`, `.sass`
@@ -95,18 +95,22 @@ If no companion file exists, you will be prompted to create one. Enter the desir
 
 ## Installation
 
-1. Open VS Code and go to the Extensions view by clicking the Extensions icon in the Activity Bar on the side of the window.
-2. Search for `vscode-styleswitch` and install the extension.
-3. Set up your keybindings as described in the [Keybinding Setup](#keybinding-setup) section.
+1. Open the Extensions panel in Visual Studio Code.
+2. Click on the three dots in the top right corner and select "Install from
+   VSIX..."
+3. Select the `vscode-style-ext-switcher-1.0.0.vsix` file from your file system and click "Install".
 
 ## Contributing
 
-Please report issues and submit pull requests to the [vscode-styleswitch GitHub repository](https://github.com/levikline/vscode-file-ext-switcher).
+Please report issues and submit pull requests to the [vscode-style-ext-switcher GitHub
+repository](https://github.com/levikline/vscode-file-ext-switcher).
+
+In order to compile the extension locally during development, you will need to run `npm install`
+and `npm run package` to generate a `.vsix` file.
 
 ## Acknowledgements
 
-This extension was inspired by the original [meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher) but has been reimagined and rewritten to support specific use cases involving JavaScript/TypeScript and CSS/SCSS file switching.
-
----
-
-Enjoy a more efficient workflow with `vscode-styleswitch`!
+This extension was inspired by the original
+[meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher)
+but has been reimagined and rewritten to support specific use cases involving
+JavaScript/TypeScript and CSS/SCSS file switching.
