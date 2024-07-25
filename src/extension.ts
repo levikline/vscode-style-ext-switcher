@@ -1,13 +1,12 @@
 "use strict";
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+// The module 'vscode' contains the VS Code extensibility API Import the module
+// and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 
 interface CommandArguments {
-  jsCompanionExtension: string; // default: ".css"
-  cssCompanionExtension: string; // default: ".js"
+  cssExtension: string; // default: ".css"
   useDirectoryName: boolean; // default: true
   useOtherColumn: boolean; // default: false
 }
@@ -18,9 +17,9 @@ enum FileType {
   UNKNOWN,
 }
 
+const INDEX = "index";
 const JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"];
-const CSS_EXTENSIONS = [".module.scss", ".css", ".scss", ".sass"];
-const EXTENSIONS = [...JS_EXTENSIONS, ...CSS_EXTENSIONS];
+const CSS_EXTENSIONS = [".module.scss", ".css", ".scss", ".sass", ".less"];
 
 /**
  * Determines the file type based on the extension.
@@ -38,8 +37,8 @@ function getFileType(extension: string): FileType {
 }
 
 /**
- * This method is called when your extension is activated.
- * Your extension is activated the very first time the command is executed.
+ * This method is called when your extension is activated. Your extension is
+ * activated the very first time the command is executed.
  */
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
@@ -78,14 +77,12 @@ function switchToFile(args: any) {
  * @returns Parsed command arguments.
  */
 function parseArgs(args: any): CommandArguments {
-  const jsCompanionExtension = args.jsCompanionExtension || ".css";
-  const cssCompanionExtension = args.cssCompanionExtension || ".js";
+  const cssExtension = args.cssExtension || ".css";
   const useDirectoryName = args.useDirectoryName !== false; // default to true if undefined
   const useOtherColumn = args.useOtherColumn === true; // default to false if undefined
 
   return {
-    jsCompanionExtension,
-    cssCompanionExtension,
+    cssExtension,
     useDirectoryName,
     useOtherColumn,
   };
@@ -115,44 +112,80 @@ function tryOpenCompanionFile(
   const filesMap: { [key: string]: string } = {};
   files.forEach((x) => (filesMap[x] = x));
 
+  // Find matching files based on the current file name.
   const name = currentFile.split(".")[0];
-  const matches = files.filter((x) => x.startsWith(name));
-  const candidates = matches.map((x) =>
+  const fileMatches = files.filter(
+    (x) =>
+      x.startsWith(name) &&
+      x !== currentFile &&
+      fileType !== getFileType(path.extname(x))
+  );
+  const candidatePaths = fileMatches.map((x) =>
     path.join(path.dirname(currentPath), x)
   );
 
-  // If no file is found, try finding a file with the folder name (if enabled)
-  // We intentionally exclude the current file from the list of candidates
-  const index = candidates.indexOf(currentPath);
-  const filteredCandidates = candidates.filter((_, i) => i !== index);
-  if (filteredCandidates.length === 0 && args.useDirectoryName) {
+  // If no file is found and we are working with an "index" JS file, try finding
+  // a CSS file with the folder name (if enabled)
+  if (
+    fileType === FileType.JS &&
+    candidatePaths.length === 0 &&
+    name === INDEX &&
+    args.useDirectoryName
+  ) {
     const dirName = path.basename(path.dirname(currentPath));
-    for (let ext of EXTENSIONS) {
+    for (let ext of CSS_EXTENSIONS) {
       const folderFile = path.join(
         path.dirname(currentPath),
         `${dirName}${ext}`
       );
       if (filesMap[`${dirName}${ext}`]) {
-        candidates.push(folderFile);
+        candidatePaths.push(folderFile);
+      }
+    }
+  }
+
+  // If no file is found and we are working with a CSS file, try finding a JS
+  // file with an "index" name (if enabled)
+  if (
+    fileType === FileType.CSS &&
+    candidatePaths.length === 0 &&
+    args.useDirectoryName
+  ) {
+    for (let ext of JS_EXTENSIONS) {
+      const indexFile = path.join(path.dirname(currentPath), `${INDEX}${ext}`);
+      if (filesMap[`${INDEX}${ext}`]) {
+        candidatePaths.push(indexFile);
       }
     }
   }
 
   // Find the next candidate to open (for cycling through files)
-  const selfIndex = candidates.indexOf(currentPath);
-  const nextIndex = (selfIndex + 1) % candidates.length;
-  const candidate = candidates[nextIndex];
+  const currentFileIndex = files.indexOf(currentFile);
+  let candidate = candidatePaths.find(
+    (x) => files.indexOf(path.basename(x)) > currentFileIndex
+  );
 
-  // If a candidate is found, and it is not the current file, open it
-  if (candidate && candidate !== currentPath) {
+  // If no candidate is found after the current file, use the first one
+  if (!candidate && candidatePaths.length > 0) {
+    candidate = candidatePaths[0];
+  }
+
+  if (candidate) {
+    // The file exists, so open it
     openFile(candidate, determineColumn(args.useOtherColumn));
-  } else {
+  } else if (fileType === FileType.JS) {
+    // The file does not exist, so prompt to create a companion
     promptToCreateCompanionFile(currentPath, args, fileType);
+  } else {
+    // The file does not exist, so show an error
+    vscode.window.showErrorMessage(
+      "styleswitch: No companion file found for " + currentFile
+    );
   }
 }
 
 /**
- * Prompts the user to create a companion file if one does not exist.
+ * Prompts the user to create a companion CSS file if one does not exist.
  * @param currentPath The path of the current file.
  * @param args Parsed command arguments.
  * @param fileType The type of the current file.
@@ -165,19 +198,10 @@ function promptToCreateCompanionFile(
   const dir = path.dirname(currentPath);
   const dirName = path.basename(dir);
   const baseName = path.basename(currentPath, path.extname(currentPath));
-  let defaultName = "";
-
-  if (fileType === FileType.JS) {
-    defaultName =
-      baseName === "index" && args.useDirectoryName
-        ? `${dirName}${args.cssCompanionExtension}`
-        : `${baseName}${args.cssCompanionExtension}`;
-  } else if (fileType === FileType.CSS) {
-    defaultName =
-      baseName === "index" && args.useDirectoryName
-        ? `${dirName}${args.jsCompanionExtension}`
-        : `${baseName}${args.jsCompanionExtension}`;
-  }
+  const defaultName =
+    baseName === INDEX && args.useDirectoryName
+      ? `${dirName}${args.cssExtension}`
+      : `${baseName}${args.cssExtension}`;
 
   vscode.window
     .showInputBox({
