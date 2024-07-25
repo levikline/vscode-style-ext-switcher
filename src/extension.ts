@@ -97,7 +97,9 @@ function tryOpenCompanionFile(
   );
 
   // If no file is found, try finding a file with the folder name (if enabled)
-  if (candidates.length === 0 && args.useDirName) {
+  const index = candidates.indexOf(currentPath);
+  const filteredCandidates = candidates.filter((_, i) => i !== index);
+  if (filteredCandidates.length === 0 && args.useDirName) {
     const dirName = path.basename(path.dirname(currentPath));
     for (let e of EXTENSIONS) {
       const folderFile = path.join(path.dirname(currentPath), `${dirName}${e}`);

@@ -81,7 +81,13 @@ Once the extension is installed and keybindings are set up, use your configured 
 
 ### Finding Companion Files
 
-When invoked, the command will look for files in the same directory as the current file, matching the specified extensions. If no matching files are found, it will fall back to using the parent directory name as the base name.
+When invoked, the command will look for files in the same directory as the
+current file, matching the specified extensions. If no matching files are found,
+it will fall back to using the parent directory name as the base name.
+
+### Cycle Through Companion Files
+
+This command cycles through matching companion files within the same directory:
 
 ### Creating Companion Files
 
