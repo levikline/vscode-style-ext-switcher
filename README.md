@@ -1,11 +1,7 @@
-# file-ext-switcher
+# vscode-file-ext-switcher
 
-Fork from
-[meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher)
-to add support for locating companion files using the name of the parent directory
-when no matching files are found using the name of the current file, and to
-prevent the extension from opening the current file in the other editor column
-when the current file is the only file that matches the base name. More details:
+Based on
+[meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher):
 
 1. Add support for locating companion files using the name of the parent
    directory when no matching files are found using the name of the current
@@ -16,6 +12,7 @@ when the current file is the only file that matches the base name. More details:
    other editor column when the current file is the only file that matches the
    base name. Instead, a message is displayed in the status bar indicating that
    no matching files were found.
+3. Use the latest packages for VSCode extension development according to [the docs](https://code.visualstudio.com/api/get-started/your-first-extension)
 
 For my specific use case, I use the following keybinding:
 
@@ -29,6 +26,8 @@ For my specific use case, I use the following keybinding:
 ```
 
 ---
+
+# From [meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher)
 
 Once **[set up](#setup)** _file-ext-switcher_ allows you to quickly switch via keyboard shortcuts between files which share same name but differ by extension (AKA companion files, e.g. from `file.html` to `file.js`).
 This is very useful for Angular (and even AngularJs) component development where you need to quickly switch between code, template, style and test files.
