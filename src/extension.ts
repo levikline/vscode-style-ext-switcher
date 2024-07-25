@@ -6,9 +6,10 @@ import * as path from "path";
 import * as fs from "fs";
 
 interface CommandArguments {
-  jsExtension: string;
-  cssExtension: string;
-  useDirName: boolean;
+  jsCompanionExtension: string; // default: ".css"
+  cssCompanionExtension: string; // default: ".js"
+  useDirectoryName: boolean; // default: true
+  useOtherColumn: boolean; // default: false
 }
 
 enum FileType {
@@ -21,6 +22,11 @@ const JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"];
 const CSS_EXTENSIONS = [".module.scss", ".css", ".scss", ".sass"];
 const EXTENSIONS = [...JS_EXTENSIONS, ...CSS_EXTENSIONS];
 
+/**
+ * Determines the file type based on the extension.
+ * @param extension The file extension.
+ * @returns The file type.
+ */
 function getFileType(extension: string): FileType {
   if (JS_EXTENSIONS.includes(extension)) {
     return FileType.JS;
@@ -31,8 +37,10 @@ function getFileType(extension: string): FileType {
   return FileType.UNKNOWN;
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+/**
+ * This method is called when your extension is activated.
+ * Your extension is activated the very first time the command is executed.
+ */
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("styleswitch", (args: any) =>
@@ -41,6 +49,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
+/**
+ * Switches to a companion file based on the current file.
+ * @param args Command arguments.
+ */
 function switchToFile(args: any) {
   const current = vscode.window.activeTextEditor?.document.fileName;
 
@@ -60,18 +72,31 @@ function switchToFile(args: any) {
   });
 }
 
+/**
+ * Parses the command arguments.
+ * @param args Command arguments.
+ * @returns Parsed command arguments.
+ */
 function parseArgs(args: any): CommandArguments {
-  const jsExtension = args.jsExtension || ".css";
-  const cssExtension = args.cssExtension || ".js";
-  const useDirName = args.useDirName || true;
+  const jsCompanionExtension = args.jsCompanionExtension || ".css";
+  const cssCompanionExtension = args.cssCompanionExtension || ".js";
+  const useDirectoryName = args.useDirectoryName !== false; // default to true if undefined
+  const useOtherColumn = args.useOtherColumn === true; // default to false if undefined
 
   return {
-    jsExtension,
-    cssExtension,
-    useDirName,
+    jsCompanionExtension,
+    cssCompanionExtension,
+    useDirectoryName,
+    useOtherColumn,
   };
 }
 
+/**
+ * Attempts to open a companion file.
+ * @param currentPath The path of the current file.
+ * @param args Parsed command arguments.
+ * @param files List of files in the current directory.
+ */
 function tryOpenCompanionFile(
   currentPath: string,
   args: CommandArguments,
@@ -97,30 +122,41 @@ function tryOpenCompanionFile(
   );
 
   // If no file is found, try finding a file with the folder name (if enabled)
+  // We intentionally exclude the current file from the list of candidates
   const index = candidates.indexOf(currentPath);
   const filteredCandidates = candidates.filter((_, i) => i !== index);
-  if (filteredCandidates.length === 0 && args.useDirName) {
+  if (filteredCandidates.length === 0 && args.useDirectoryName) {
     const dirName = path.basename(path.dirname(currentPath));
-    for (let e of EXTENSIONS) {
-      const folderFile = path.join(path.dirname(currentPath), `${dirName}${e}`);
-      if (filesMap[`${dirName}${e}`]) {
+    for (let ext of EXTENSIONS) {
+      const folderFile = path.join(
+        path.dirname(currentPath),
+        `${dirName}${ext}`
+      );
+      if (filesMap[`${dirName}${ext}`]) {
         candidates.push(folderFile);
       }
     }
   }
 
+  // Find the next candidate to open (for cycling through files)
   const selfIndex = candidates.indexOf(currentPath);
   const nextIndex = (selfIndex + 1) % candidates.length;
   const candidate = candidates[nextIndex];
 
   // If a candidate is found, and it is not the current file, open it
   if (candidate && candidate !== currentPath) {
-    openFile(candidate, determineColumn(true));
+    openFile(candidate, determineColumn(args.useOtherColumn));
   } else {
     promptToCreateCompanionFile(currentPath, args, fileType);
   }
 }
 
+/**
+ * Prompts the user to create a companion file if one does not exist.
+ * @param currentPath The path of the current file.
+ * @param args Parsed command arguments.
+ * @param fileType The type of the current file.
+ */
 function promptToCreateCompanionFile(
   currentPath: string,
   args: CommandArguments,
@@ -130,16 +166,17 @@ function promptToCreateCompanionFile(
   const dirName = path.basename(dir);
   const baseName = path.basename(currentPath, path.extname(currentPath));
   let defaultName = "";
+
   if (fileType === FileType.JS) {
     defaultName =
-      baseName === "index" && args.useDirName
-        ? `${dirName}${args.cssExtension}`
-        : `${baseName}${args.cssExtension}`;
+      baseName === "index" && args.useDirectoryName
+        ? `${dirName}${args.cssCompanionExtension}`
+        : `${baseName}${args.cssCompanionExtension}`;
   } else if (fileType === FileType.CSS) {
     defaultName =
-      baseName === "index" && args.useDirName
-        ? `${dirName}${args.jsExtension}`
-        : `${baseName}${args.jsExtension}`;
+      baseName === "index" && args.useDirectoryName
+        ? `${dirName}${args.jsCompanionExtension}`
+        : `${baseName}${args.jsCompanionExtension}`;
   }
 
   vscode.window
@@ -158,12 +195,17 @@ function promptToCreateCompanionFile(
             "styleswitch: Could not create file: " + err
           );
         } else {
-          openFile(newFilePath, determineColumn(true));
+          openFile(newFilePath, determineColumn(args.useOtherColumn));
         }
       });
     });
 }
 
+/**
+ * Determines the column to use for opening a file.
+ * @param useOtherColumn Whether to use the other column.
+ * @returns The column number.
+ */
 function determineColumn(useOtherColumn: boolean): number {
   const active = vscode.window.activeTextEditor?.viewColumn;
 
@@ -178,12 +220,15 @@ function determineColumn(useOtherColumn: boolean): number {
   return active === 1 ? 2 : 1;
 }
 
-function openFile(path: string, column: number): boolean {
+/**
+ * Opens a file in the specified column.
+ * @param filePath The path of the file to open.
+ * @param column The column to open the file in.
+ */
+function openFile(filePath: string, column: number): void {
   vscode.workspace
-    .openTextDocument(path)
-    .then((x) => vscode.window.showTextDocument(x, column));
-
-  return true;
+    .openTextDocument(filePath)
+    .then((doc) => vscode.window.showTextDocument(doc, column));
 }
 
 // this method is called when your extension is deactivated

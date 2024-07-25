@@ -8,8 +8,7 @@
 
 - **Switch between JS/TS and CSS/SCSS files**: Quickly switch between JavaScript/TypeScript and CSS/SCSS files with matching base names.
 - **Directory name fallback**: If no matching files are found using the current file name, the extension will search using the parent directory name as the base name.
-- **Create companion files**: If no companion files exist, you can easily create
-  a new companion file using a prompt.
+- **Create companion files**: If no companion files exist, you can easily create a new companion file using a prompt.
 
 ## Example Directory Structure
 
@@ -29,30 +28,42 @@ With the appropriate keybinding set up, you can quickly switch between `index.ts
 1. **Open `index.tsx`**: Start by opening `index.tsx` in the editor.
 2. **Invoke Keybinding**: Use your configured keybinding (e.g., `cmd+shift+c`) to switch to the corresponding `NavigationBar.module.scss` file.
 
-If `NavigationBar.module.scss` does not exist, you will be prompted to create
-it, ensuring a smooth workflow.
+If `NavigationBar.module.scss` does not exist, you will be prompted to create it, ensuring a smooth workflow.
 
-Note: As of now, the extension does not support switching back from named
-CSS/SCSS files to the corresponding `index.xxx` file.
+Note: As of now, the extension does not support switching back from named CSS/SCSS files to the corresponding `index.xxx` file.
 
 ## Keybinding Setup
 
 To use `vscode-style-ext-switcher`, you need to set up custom keybindings. This allows you to quickly switch between related files with a single keystroke.
 
+### Available Arguments
+
+- `jsCompanionExtension`: Specifies the default extension for the JavaScript/TypeScript
+  companion file when creating a new file. Default: `.css`
+- `cssCompanionExtension`: Specifies the default extension for the CSS/SCSS
+  companion file when creating a new file. Default: `.js`
+- `useDirectoryName`: A boolean flag indicating whether to use the directory name as the base name if no matching files are found. Default: `true`
+- `useOtherColumn`: A boolean flag indicating whether to open the companion file
+  in another editor column. Default: `false`
+
+Note: the `jsCompanionExtension` and `cssCompanionExtension` arguments are only
+for creating new files. The extension will still search for existing files using all supported extensions.
+
 ### Example Keybindings
 
-#### Open Companion File in Another Column
+These shortcuts open a companion file, with options to open it in another editor column:
 
-These shortcuts open a companion file in another editor column, so you can quickly view related files side by side:
+To set up keybindings, open the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`) and search for "Preferences: Open Keyboard Shortcuts (JSON)". Add the following JSON configuration to your `keybindings.json` file:
 
 ```json
 {
   "key": "cmd+shift+c",
   "command": "styleswitch",
   "args": {
-    "jsExtension": ".js",
-    "cssExtension": ".module.scss",
-    "useDirName": true
+    "jsCompanionExtension": ".js",
+    "cssCompanionExtension": ".module.scss",
+    "useDirectoryName": true,
+    "useOtherColumn": true
   },
   "when": "editorTextFocus"
 },
@@ -60,9 +71,10 @@ These shortcuts open a companion file in another editor column, so you can quick
   "key": "cmd+shift+d",
   "command": "styleswitch",
   "args": {
-    "jsExtension": ".tsx",
-    "cssExtension": ".scss",
-    "useDirName": true
+    "jsCompanionExtension": ".tsx",
+    "cssCompanionExtension": ".scss",
+    "useDirectoryName": true,
+    "useOtherColumn": true
   },
   "when": "editorTextFocus"
 }
@@ -81,9 +93,7 @@ Once the extension is installed and keybindings are set up, use your configured 
 
 ### Finding Companion Files
 
-When invoked, the command will look for files in the same directory as the
-current file, matching the specified extensions. If no matching files are found,
-it will fall back to using the parent directory name as the base name.
+When invoked, the command will look for files in the same directory as the current file, matching the specified extensions. If no matching files are found, it will fall back to using the parent directory name as the base name.
 
 ### Cycle Through Companion Files
 
@@ -96,17 +106,14 @@ If no companion file exists, you will be prompted to create one. Enter the desir
 ## Installation
 
 1. Open the Extensions panel in Visual Studio Code.
-2. Click on the three dots in the top right corner and select "Install from
-   VSIX..."
+2. Click on the three dots in the top right corner and select "Install from VSIX..."
 3. Select the `vscode-style-ext-switcher-1.0.0.vsix` file from your file system and click "Install".
 
 ## Contributing
 
-Please report issues and submit pull requests to the [vscode-style-ext-switcher GitHub
-repository](https://github.com/levikline/vscode-file-ext-switcher).
+Please report issues and submit pull requests to the [vscode-style-ext-switcher GitHub repository](https://github.com/levikline/vscode-file-ext-switcher).
 
-In order to compile the extension locally during development, you will need to run `npm install`
-and `npm run package` to generate a `.vsix` file.
+In order to compile the extension locally during development, you will need to run `npm install` and `npm run package` to generate a `.vsix` file.
 
 ## Acknowledgements
 
