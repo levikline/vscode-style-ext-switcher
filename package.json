@@ -1,9 +1,9 @@
 {
-  "name": "fileswitcher",
-  "displayName": "File Switcher",
-  "description": "Switch between files with the same name but different extensions.",
+  "name": "vscode-styleswitch",
+  "displayName": "Style Switcher",
+  "description": "Switch between companion JavaScript and CSS files in Visual Studio Code",
   "version": "1.0.0",
-  "publisher": "StyleAI",
+  "publisher": "levikline",
   "license": "MIT",
   "icon": "icon.png",
   "engines": {
@@ -21,8 +21,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "fileextswitch",
-        "title": "Switch: to a companion file with the extension specified in the command arguments. Command argument can also control whether to open file in other editor column."
+        "command": "styleswitch",
+        "title": "Switch between companion JavaScript and CSS files in Visual Studio Code"
       }
     ]
   },

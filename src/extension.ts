@@ -6,21 +6,36 @@ import * as path from "path";
 import * as fs from "fs";
 
 interface CommandArguments {
-  /**
-   * The extensions to switch to, need to have a leading period
-   */
-  extensions: string[];
-  /**
-   * Open the file in a different editor column. Default false
-   */
-  useOtherColumn: boolean;
+  jsExtension: string;
+  cssExtension: string;
+  useDirName: boolean;
+}
+
+enum FileType {
+  JS,
+  CSS,
+  UNKNOWN,
+}
+
+const JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"];
+const CSS_EXTENSIONS = [".module.scss", ".css", ".scss", ".sass"];
+const EXTENSIONS = [...JS_EXTENSIONS, ...CSS_EXTENSIONS];
+
+function getFileType(extension: string): FileType {
+  if (JS_EXTENSIONS.includes(extension)) {
+    return FileType.JS;
+  }
+  if (CSS_EXTENSIONS.includes(extension)) {
+    return FileType.CSS;
+  }
+  return FileType.UNKNOWN;
 }
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
-    vscode.commands.registerCommand("fileextswitch", (args: any) =>
+    vscode.commands.registerCommand("styleswitch", (args: any) =>
       switchToFile(args)
     )
   );
@@ -38,32 +53,22 @@ function switchToFile(args: any) {
   const dir = path.dirname(current);
   fs.readdir(dir, (err, files) => {
     if (err) {
-      vscode.window.showErrorMessage("fileextswitch encountered error: " + err);
+      vscode.window.showErrorMessage("styleswitch encountered error: " + err);
       return;
     }
     tryOpenCompanionFile(current, validArgs, files);
   });
 }
 
-function showKeybindingWarning() {
-  const warn = `Your keybinding for fileextswitch is incorrectly configured. See https://goo.gl/gsCYrW for how to set up correct configuration.`;
-  vscode.window.showWarningMessage(warn);
-}
-
 function parseArgs(args: any): CommandArguments {
-  if (
-    !args.extensions ||
-    !args.extensions.length ||
-    // @ts-expect-error - support any type
-    args.extensions.find((x) => x.indexOf(".") !== 0) // all extensions need to start with leading .
-  ) {
-    showKeybindingWarning();
-    args.extensions = [];
-  }
+  const jsExtension = args.jsExtension || ".css";
+  const cssExtension = args.cssExtension || ".js";
+  const useDirName = args.useDirName || true;
 
   return {
-    useOtherColumn: args.useOtherColumn || false,
-    extensions: args.extensions,
+    jsExtension,
+    cssExtension,
+    useDirName,
   };
 }
 
@@ -72,45 +77,29 @@ function tryOpenCompanionFile(
   args: CommandArguments,
   files: string[]
 ) {
-  const currentFile = path.basename(currentPath); // this gives us the file with all extensions
-  const components = currentFile.split(".");
+  const currentFile = path.basename(currentPath);
+  const fileType = getFileType(path.extname(currentFile));
+
+  if (fileType === FileType.UNKNOWN) {
+    vscode.window.showErrorMessage(
+      "styleswitch: File must be a JS or CSS file"
+    );
+    return;
+  }
 
   const filesMap: { [key: string]: string } = {};
   files.forEach((x) => (filesMap[x] = x));
 
-  // now lets try changing the last component, then the last 2 etc.
-  const minimumComponentMatches = 1;
-  const currentExtension = 1;
-  const candidates = [];
+  const name = currentFile.split(".")[0];
+  const matches = files.filter((x) => x.startsWith(name));
+  const candidates = matches.map((x) =>
+    path.join(path.dirname(currentPath), x)
+  );
 
-  // try all extensions
-  for (let e of args.extensions) {
-    for (
-      let i = components.length - currentExtension;
-      i >= minimumComponentMatches;
-      i--
-    ) {
-      const nextComponents = components.slice(0, i);
-      const nextBase = nextComponents.join(".");
-
-      const nextFile = nextBase + e;
-      const exists = filesMap[nextFile];
-
-      if (exists && nextFile !== currentFile) {
-        const dir = path.dirname(currentPath);
-        const filePath = path.join(dir, nextFile);
-
-        if (candidates.indexOf(filePath) === -1) {
-          candidates.push(filePath);
-        }
-      }
-    }
-  }
-
-  if (candidates.length === 0) {
-    // If no file is found, try finding a file with the folder name
+  // If no file is found, try finding a file with the folder name (if enabled)
+  if (candidates.length === 0 && args.useDirName) {
     const dirName = path.basename(path.dirname(currentPath));
-    for (let e of args.extensions) {
+    for (let e of EXTENSIONS) {
       const folderFile = path.join(path.dirname(currentPath), `${dirName}${e}`);
       if (filesMap[`${dirName}${e}`]) {
         candidates.push(folderFile);
@@ -120,13 +109,57 @@ function tryOpenCompanionFile(
 
   const selfIndex = candidates.indexOf(currentPath);
   const nextIndex = (selfIndex + 1) % candidates.length;
-
   const candidate = candidates[nextIndex];
-  if (candidate) {
-    openFile(candidate, determineColumn(args.useOtherColumn));
+
+  // If a candidate is found, and it is not the current file, open it
+  if (candidate && candidate !== currentPath) {
+    openFile(candidate, determineColumn(true));
   } else {
-    vscode.window.showInformationMessage("No matching file found");
+    promptToCreateCompanionFile(currentPath, args, fileType);
   }
+}
+
+function promptToCreateCompanionFile(
+  currentPath: string,
+  args: CommandArguments,
+  fileType: FileType
+) {
+  const dir = path.dirname(currentPath);
+  const dirName = path.basename(dir);
+  const baseName = path.basename(currentPath, path.extname(currentPath));
+  let defaultName = "";
+  if (fileType === FileType.JS) {
+    defaultName =
+      baseName === "index" && args.useDirName
+        ? `${dirName}${args.cssExtension}`
+        : `${baseName}${args.cssExtension}`;
+  } else if (fileType === FileType.CSS) {
+    defaultName =
+      baseName === "index" && args.useDirName
+        ? `${dirName}${args.jsExtension}`
+        : `${baseName}${args.jsExtension}`;
+  }
+
+  vscode.window
+    .showInputBox({
+      prompt: "Enter the name of the new companion file",
+      value: defaultName,
+    })
+    .then((input) => {
+      if (!input) {
+        return;
+      }
+      const newFilePath = path.join(dir, input);
+      fs.writeFile(newFilePath, "", (err) => {
+        if (err) {
+          vscode.window.showErrorMessage(
+            "styleswitch: Could not create file: " + err
+          );
+        } else {
+          openFile(newFilePath, determineColumn(true));
+        }
+      });
+    });
 }
 
 function determineColumn(useOtherColumn: boolean): number {

@@ -1,123 +1,106 @@
-# vscode-file-ext-switcher
+# vscode-styleswitch
 
-Based on
-[meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher):
+## Introduction
 
-1. Add support for locating companion files using the name of the parent
-   directory when no matching files are found using the name of the current
-   file. This is particularly useful for finding `.scss` files when the parent
-   directory name serves as the base name, and the corresponding `.tsx` file
-   is named `index.tsx`.
-2. Add support for preventing the extension from opening the current file in the
-   other editor column when the current file is the only file that matches the
-   base name. Instead, a message is displayed in the status bar indicating that
-   no matching files were found.
-3. Use the latest packages for VSCode extension development according to [the docs](https://code.visualstudio.com/api/get-started/your-first-extension)
+`vscode-styleswitch` is a Visual Studio Code extension designed to streamline switching between companion JavaScript (or TypeScript) and CSS (or SCSS) files. This extension is particularly useful for developers working with React or other frameworks where related files frequently share the same base name but have different extensions.
 
-For my specific use case, I use the following keybinding:
+## Features
+
+- **Switch between JS/TS and CSS/SCSS files**: Quickly switch between JavaScript/TypeScript and CSS/SCSS files with matching base names.
+- **Directory name fallback**: If no matching files are found using the current file name, the extension will search using the parent directory name as the base name.
+- **Create companion files**: If no companion files exist, you can easily create
+  a new companion file using a prompt.
+
+## Example Directory Structure
+
+Consider a project structure where you have a `NavigationBar` component folder containing `index.tsx` and `NavigationBar.module.scss`. This is a typical scenario where `vscode-styleswitch` proves useful.
+
+```plaintext
+my-project/
+├── src/
+│   ├── components/
+│   │   ├── NavigationBar/
+│   │   │   ├── index.tsx
+│   │   │   ├── NavigationBar.module.scss
+```
+
+With the appropriate keybinding set up, you can quickly switch between `index.tsx` and `NavigationBar.module.scss`:
+
+1. **Open `index.tsx`**: Start by opening `index.tsx` in the editor.
+2. **Invoke Keybinding**: Use your configured keybinding (e.g., `cmd+shift+c`) to switch to the corresponding `NavigationBar.module.scss` file.
+
+If `NavigationBar.module.scss` does not exist, you will be prompted to create
+it, ensuring a smooth workflow.
+
+Note: As of now, the extension does not support switching back from named
+CSS/SCSS files to the corresponding `index.xxx` file.
+
+## Keybinding Setup
+
+To use `vscode-styleswitch`, you need to set up custom keybindings. This allows you to quickly switch between related files with a single keystroke.
+
+### Example Keybindings
+
+#### Open Companion File in Another Column
+
+These shortcuts open a companion file in another editor column, so you can quickly view related files side by side:
 
 ```json
 {
   "key": "cmd+shift+c",
-  "command": "fileextswitch",
-  "args": { "extensions": [".module.scss", ".tsx"], "useOtherColumn": true },
-  "when": "editorTextFocus"
-}
-```
-
----
-
-# From [meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher)
-
-Once **[set up](#setup)** _file-ext-switcher_ allows you to quickly switch via keyboard shortcuts between files which share same name but differ by extension (AKA companion files, e.g. from `file.html` to `file.js`).
-This is very useful for Angular (and even AngularJs) component development where you need to quickly switch between code, template, style and test files.
-
-> This extension provides key-bindable VS code commands for every supported file type that you specify.
-> **Please note that you must set up bindings first, see [Setup](#setup)**.
-
-## Features
-
-Switch to/between **any companion file(s)** in the same directory that shares at least one file-name component. Examples of usage:
-
-- Switch to styles `.css` or `.scss`
-- Open `.html` template in another editor column in split mode
-- Switch between `.ts` and generated `.js` files
-- Switch from `.ts` to `.spec.ts` and back
-
-## Setup
-
-Bind your custom keybindings to the `fileextswitch` commands for super-fast switching.
-
-1. In VSCode open Command Palette
-2. Type in and select `Preferences: Open Keyboard Shortcuts File`
-3. Add one or more custom _file-ext-switcher_ keybinding into the file
-
-A sample keybinding looks like this:
-
-```javascript
-{
-    "key": "ctrl+shift+j",
-    "command": "fileextswitch",
-    "args": {
-        "extensions": [".html", ".ts",], // extensions to switch to (in the exact order)
-        "useOtherColumn": true // open companion file in other editor column (default false)
-    },
-    "when": "editorTextFocus"
-},
-```
-
-## Example Keybindings
-
-### Open companion file in other column
-
-These shortcuts open a companion file in the other editor column (note the `useOtherColumn: true`), so you can quickly open your `component.ts` definition next to your `component.html`:
-
-```json
-{
-    "key": "ctrl+shift+j",
-    "command": "fileextswitch",
-    "args": { "extensions": [".html"], "useOtherColumn": true },
-    "when": "editorTextFocus"
-},
-{
-    "key": "ctrl+shift+k",
-    "command": "fileextswitch",
-    "args": { "extensions": [".js", ".ts"], "useOtherColumn": true },
-    "when": "editorTextFocus"
-},
-{
-    "key": "ctrl+shift+l",
-    "command": "fileextswitch",
-    "args": { "extensions": [".css", ".scss"], "useOtherColumn": true },
-    "when": "editorTextFocus"
-},
-{
-    "key": "ctrl+shift+;",
-    "command": "fileextswitch",
-    "args": { "extensions": [".spec.ts"], "useOtherColumn": true },
-    "when": "editorTextFocus"
-}
-```
-
-### Cycle through companion files
-
-When invoked, the command will look for files in the same directory of the current file, which share at least one base component (e.g. "app" for a file named "app.module.ts"). Matching follows the order of specified extensions, locating the current file's extension in the list and then cycling through to the next file extension. This allows e.g. to generate a keyboard shortcut for cyclic switching between file extensions:
-
-```json
-{
-  "key": "ctrl+shift+i",
-  "command": "fileextswitch",
+  "command": "styleswitch",
   "args": {
-    "extensions": [".ts", ".html", ".scss"]
+    "jsExtension": ".js",
+    "cssExtension": ".module.scss",
+    "useDirName": true
+  },
+  "when": "editorTextFocus"
+},
+{
+  "key": "cmd+shift+d",
+  "command": "styleswitch",
+  "args": {
+    "jsExtension": ".tsx",
+    "cssExtension": ".scss",
+    "useDirName": true
   },
   "when": "editorTextFocus"
 }
 ```
 
+## Supported File Extensions
+
+The `vscode-styleswitch` extension supports the following file extensions:
+
+- JavaScript: `.js`, `.jsx`, `.ts`, `.tsx`
+- CSS: `.module.scss`, `.css`, `.scss`, `.sass`
+
+## Usage
+
+Once the extension is installed and keybindings are set up, use your configured keybinding to switch between companion files.
+
+### Finding Companion Files
+
+When invoked, the command will look for files in the same directory as the current file, matching the specified extensions. If no matching files are found, it will fall back to using the parent directory name as the base name.
+
+### Creating Companion Files
+
+If no companion file exists, you will be prompted to create one. Enter the desired name for the new file, and it will be created and opened in a new editor column.
+
+## Installation
+
+1. Open VS Code and go to the Extensions view by clicking the Extensions icon in the Activity Bar on the side of the window.
+2. Search for `vscode-styleswitch` and install the extension.
+3. Set up your keybindings as described in the [Keybinding Setup](#keybinding-setup) section.
+
 ## Contributing
 
-Please report issues and submit pull-requests to https://github.com/JohannesRudolph/vscode-file-ext-switcher
+Please report issues and submit pull requests to the [vscode-styleswitch GitHub repository](https://github.com/levikline/vscode-file-ext-switcher).
 
 ## Acknowledgements
 
-If you prefer a graphical companion file switcher and can live without keybindings, check out the excellent [companion-file-switcher](https://marketplace.visualstudio.com/items?itemName=ClementVidal.companion-file-switcher) extension.
+This extension was inspired by the original [meshcloud/vscode-file-ext-switcher](https://github.com/meshcloud/vscode-file-ext-switcher) but has been reimagined and rewritten to support specific use cases involving JavaScript/TypeScript and CSS/SCSS file switching.
+
+---
+
+Enjoy a more efficient workflow with `vscode-styleswitch`!
