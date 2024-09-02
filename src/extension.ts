@@ -116,7 +116,7 @@ function tryOpenCompanionFile(
   const name = currentFile.split(".")[0];
   const fileMatches = files.filter(
     (x) =>
-      x.startsWith(name) &&
+      x.split(".")[0] === name &&
       x !== currentFile &&
       fileType !== getFileType(path.extname(x))
   );
